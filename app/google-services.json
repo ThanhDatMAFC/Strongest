@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "863379497107",
+    "project_id": "strongest-442fa",
+    "storage_bucket": "strongest-442fa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:863379497107:android:d835e56d08a82b8ac72d66",
+        "android_client_info": {
+          "package_name": "com.example.strongest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhoy9dylGLhUeTmIIGbtZ_9MbwKtHtGMI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
