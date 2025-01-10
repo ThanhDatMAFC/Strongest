@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalNavigationDrawer
@@ -110,7 +112,7 @@ fun HomeScreen(
                         end.linkTo(parent.end, margin = 10.dp)
                     }
                 ) {
-                    IconButton(onClick = { /*TODO*/ }) {
+                    FloatingActionButton(onClick = { /*TODO*/ }, shape = CircleShape) {
                         Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Top")
                     }
                 }

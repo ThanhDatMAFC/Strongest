@@ -29,6 +29,7 @@ sealed interface AuthState {
 class AuthViewModel: ViewModel() {
     private val databaseRef = FirebaseDatabase.getInstance(DB_PATH).reference
     private var _auth: FirebaseAuth = Firebase.auth
+    private var _user: FirebaseUser? = null
 
     var authState: AuthState by mutableStateOf(AuthState.LoginInProgress)
         private set
@@ -41,7 +42,7 @@ class AuthViewModel: ViewModel() {
         Log.d(TAG, "Init auth view model")
     }
 
-    private fun isUserExisted(): Boolean = friends.find { it.id == _auth.currentUser?.uid } != null
+    private fun isUserExisted(): Boolean = friends.find { it.id == _user?.uid } != null
 
     private fun loginToDB(user: Map<String, String?>) {
         val key = databaseRef.child("users").push().key
@@ -52,18 +53,17 @@ class AuthViewModel: ViewModel() {
     }
 
     private fun saveUserInDb() {
-        val user = _auth.currentUser
-        if (user == null || isUserExisted()) {
+        if (_user == null || isUserExisted()) {
             Log.d(TAG, "user is existed")
             return
         } else {
             Log.d(TAG, "user is not existed")
             loginToDB(
                 mapOf(
-                    "id" to user.uid,
-                    "name" to user.displayName,
-                    "email" to user.email,
-                    "photo" to user.photoUrl.toString()
+                    "id" to _user!!.uid,
+                    "name" to _user!!.displayName,
+                    "email" to _user!!.email,
+                    "photo" to _user!!.photoUrl.toString()
                 )
             )
         }
@@ -88,25 +88,26 @@ class AuthViewModel: ViewModel() {
     }
 
     private fun getFriendWithChat() {
-        friends.forEach {
-            val chatItemModel = ChatItemModel(
+        chatFriends.addAll(friends.map {
+            ChatItemModel(
                 friendId = it.id ?: "",
                 avatarUrl = it.photo ?: "",
                 chatName = it.name ?: "",
                 message = it.email ?: "",
                 time = "12:22",
-                readStatus = false)
-            chatFriends.add(chatItemModel)
-        }
+                readStatus = false
+            ) }
+        )
+        chatFriends.removeIf { it.friendId == _auth.currentUser?.uid }
     }
 
     private fun getUserInfo() {
-        val user = _auth.currentUser
-        authState = if (user == null) {
+        _user = _auth.currentUser
+        authState = if (_user == null) {
             AuthState.NotLogin
         } else {
             getFriendList()
-            AuthState.DidLogin(user)
+            AuthState.DidLogin(_user)
         }
     }
 

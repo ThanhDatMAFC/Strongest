@@ -34,7 +34,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.toList
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Date
 
 const val DB_PATH = "https://strongest-442fa-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -168,12 +171,18 @@ class ChatViewModel : ViewModel() {
                         val readStatus = message?.get("readStatus") as Boolean
                         val sendAt = message?.get("sendAt").toString()
 
-                        if (compareDateForNewSection(sendAt, messagesFlow.lastOrNull()?.lastOrNull()?.sendAt)) {
-                            val newSection = mutableListOf(MessageModel(sender, msg, readStatus, sendAt))
+                        if (messagesFlow.isEmpty() || compareDateForNewSection(sendAt, messagesFlow.last().lastOrNull()?.sendAt)) {
+                            // Break into a new section when same day and within 10 min
+                            val newSection = listOf(MessageModel(sender, msg, readStatus, sendAt))
                             messagesFlow.add(newSection)
+                        } else {
+                            // Add item to the last section
+                            val lastSection = messagesFlow.last().toMutableList()
+                            lastSection.add(MessageModel(sender, msg, readStatus, sendAt))
+                            messagesFlow.removeAt(messagesFlow.count() - 1)
+                            messagesFlow.add(lastSection)
                         }
 
-                        messagesFlow.last().plus(MessageModel(sender, msg, readStatus, sendAt))
                     }
                 }
 
@@ -191,9 +200,12 @@ class ChatViewModel : ViewModel() {
     }
 
     companion object {
+        //TODO(REMOVE :ss of TIME_PATTERN)
         private const val TAG = "Chat ViewModel"
         private const val TIMEOUT_MILLIS = 5_000L
-        private val DATE_FORMAT = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+        const val DATE_PATTERN = "dd/MM/yyyy"
+        const val TIME_PATTERN = "HH:mm:ss"
+        private val DATE_FORMAT = SimpleDateFormat("$DATE_PATTERN $TIME_PATTERN")
     }
 }
 
@@ -205,16 +217,27 @@ fun ChatViewModel.findRoomChat(chatId: String): Boolean {
 }
 
 fun ChatViewModel.compareDateForNewSection(newDate: String?, lastDate: String?): Boolean {
-    val current = newDate?.let { SimpleDateFormat().parse(it) }
-    val prevMessageTime = lastDate?.let { SimpleDateFormat().parse(it) }
-    if (current == null || prevMessageTime == null) return false
-    if (current.compareTo(prevMessageTime) > 1) {
-        Log.d("COMPARE DATE", "$current is greater than prev")
-        return true
-    } else if (current.compareTo(prevMessageTime) == 0 && (current.time - prevMessageTime.time > 10)) {
-        Log.d("COMPARE TIME", "$current is greater than prev")
-
-        return true
+    if (newDate == null || lastDate == null) {
+        return false
     }
+
+    val currentDate = LocalDate.parse(newDate.substringBefore(' '),
+        DateTimeFormatter.ofPattern(ChatViewModel.DATE_PATTERN))
+    val prevMessageDate = LocalDate.parse(lastDate.substringBefore(' '),
+        DateTimeFormatter.ofPattern(ChatViewModel.DATE_PATTERN))
+
+    if (currentDate.isEqual(prevMessageDate)) {
+        val current = LocalTime.parse(
+            newDate.substringAfter(' '),
+            DateTimeFormatter.ofPattern(ChatViewModel.TIME_PATTERN)
+        )
+        val prevMessageTime = LocalTime.parse(
+            lastDate.substringAfter(' '),
+            DateTimeFormatter.ofPattern(ChatViewModel.TIME_PATTERN)
+        )
+        if (current.hour == prevMessageTime.hour)
+            return current.minute - prevMessageTime.minute > 10
+        return true
+    } else if (currentDate.isAfter(prevMessageDate)) return true
     return false
 }
