@@ -16,7 +16,7 @@ import com.example.strongest.viewmodel.AuthViewModel
 import com.example.strongest.viewmodel.UserViewModel
 
 @Composable
-fun MainRoute(launchAuth: () -> Unit) {
+fun MainRoute(launchAuth: () -> Unit, launchFBLogin: () -> Unit) {
     val userViewModel: UserViewModel = viewModel(factory = UserViewModel.Factory)
     val authViewModel: AuthViewModel = viewModel()
     val isUserLogin = userViewModel.userState.collectAsState()
@@ -24,13 +24,19 @@ fun MainRoute(launchAuth: () -> Unit) {
     when (authViewModel.authState) {
         is AuthState.NotLogin ->  {
             userViewModel.setAuthState(false)
-            AppMainRoute(initScreen = Login.route, launchAuth = launchAuth, authViewModel = authViewModel)
+            AppMainRoute(
+                initScreen = Login.route,
+                launchAuth = launchAuth,
+                launchFBLogin = launchFBLogin,
+                authViewModel = authViewModel
+            )
         }
         is AuthState.DidLogin -> {
             if (!isUserLogin.value.isLogin) userViewModel.setAuthState(true)
             AppMainRoute(
                 initScreen = Home.route,
                 launchAuth = launchAuth,
+                launchFBLogin = launchFBLogin,
                 authViewModel = authViewModel
             )
         }
@@ -43,6 +49,7 @@ fun AppMainRoute(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     launchAuth: () -> Unit,
+    launchFBLogin: () -> Unit,
     authViewModel: AuthViewModel,
     initScreen: String) {
     fun onGoBack() {
@@ -51,7 +58,7 @@ fun AppMainRoute(
 
     NavHost(navController = navController, startDestination = initScreen, modifier = modifier) {
         composable(Login.route) {
-            LoginScreen(launchAuth = launchAuth, skipLogin = { navController.navigate(Home.route) })
+            LoginScreen(launchAuth = launchAuth, launchFBLogin = launchFBLogin, skipLogin = { navController.navigate(Home.route) })
         }
         composable(Home.route) {
             HomeScreen(navController, authViewModel, onProfileClick = {

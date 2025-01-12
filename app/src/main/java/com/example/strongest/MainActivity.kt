@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import com.example.strongest.activity.launchAuthUiActivity
+import com.example.strongest.activity.launchFacebookActivity
 import com.example.strongest.route.MainRoute
 import com.example.strongest.ui.theme.StrongestTheme
 
@@ -22,7 +23,10 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             StrongestTheme {
-                MainRoute(launchAuth = {launchAuthUiActivity(this)})
+                MainRoute(
+                    launchAuth = { launchAuthUiActivity(this) },
+                    launchFBLogin = { launchFacebookActivity(this) }
+                )
             }
         }
     }

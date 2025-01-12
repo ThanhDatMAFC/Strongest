@@ -23,7 +23,7 @@ import com.example.strongest.component.ActivityIndicator
     SHA-256: 7A:D1:E6:BB:B8:1B:A8:38:6D:BB:E5:E0:05:E3:A1:B9:94:E1:A0:8D:58:74:73:CD:75:61:AA:B9:79:39:8D:30
  */
 @Composable
-fun LoginScreen(launchAuth: () -> Unit, skipLogin: () -> Unit, modifier: Modifier = Modifier) {
+fun LoginScreen(launchAuth: () -> Unit, launchFBLogin: () -> Unit, skipLogin: () -> Unit, modifier: Modifier = Modifier) {
     Scaffold (floatingActionButton = {
         TextButton(onClick = skipLogin) {
             Text(text = "Skip")
@@ -40,9 +40,10 @@ fun LoginScreen(launchAuth: () -> Unit, skipLogin: () -> Unit, modifier: Modifie
                 Text(text = "Login with Google")
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { /*TODO*/ }) {
+            Button(onClick = launchFBLogin) {
                 Text(text = "Login with Facebook")
             }
+
         }
     }
 }

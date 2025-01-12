@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">Strongest</string>
-    <string name="web_client_id">863379497107-fa9dh2utf9mh18v46dstd0944s7thf0q.apps.googleusercontent.com
-</string>
+    <string name="web_client_id">863379497107-fa9dh2utf9mh18v46dstd0944s7thf0q.apps.googleusercontent.com</string>
+    <string name="facebook_app_id">491685243943970</string>
+<!--    <string name="fb_login_protocol_scheme">fb1234</string>-->
+    <string name="facebook_client_token">72532fe4c0a474136f64f06d6bd56d59</string>
+
 </resources>
