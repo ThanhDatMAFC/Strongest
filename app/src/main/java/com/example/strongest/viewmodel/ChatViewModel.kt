@@ -9,6 +9,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.core.graphics.rotationMatrix
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.strongest.data.repo.AchievedMessageRepository
+import com.example.strongest.model.AchievedMessage
 import com.example.strongest.model.MessageModel
 import com.example.strongest.model.UserModel
 import com.example.strongest.viewmodel.AuthViewModel.Companion
@@ -33,6 +35,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
@@ -42,7 +45,7 @@ import java.util.Date
 
 const val DB_PATH = "https://strongest-442fa-default-rtdb.asia-southeast1.firebasedatabase.app/"
 
-class ChatViewModel : ViewModel() {
+class ChatViewModel(private val achievedMsgRepo: AchievedMessageRepository) : ViewModel() {
     private val databaseRef = FirebaseDatabase.getInstance(DB_PATH).reference
     val userId: String? = Firebase.auth.currentUser?.uid
 
@@ -59,7 +62,7 @@ class ChatViewModel : ViewModel() {
 
         if (room != null) {
             chatId = room
-            //* Get all chat history if room has
+            //* Get all chat history in local database
             databaseRef.child("chats").child(room).child("latestMsg").get()
                 .addOnSuccessListener {
                     if (it.hasChildren()) listenMsgChange()
@@ -115,7 +118,9 @@ class ChatViewModel : ViewModel() {
             val content = it.value as? HashMap<*, *>
             if (content != null) {
                 ::chatAvailability.set(content.isNotEmpty())
-                sendMessage(msg)
+                viewModelScope.launch {
+                    sendMessage(msg)
+                }
             }
             if (!chatAvailability) createNewChat(msg)
         }
@@ -131,12 +136,14 @@ class ChatViewModel : ViewModel() {
         databaseRef.child("chats").child(chatId).setValue(initChat)
             .addOnSuccessListener {
                 ::chatAvailability.set(true)
-                sendMessage(msg)
+                viewModelScope.launch {
+                    sendMessage(msg)
+                }
                 listenMsgChange()
             }
     }
 
-    fun sendMessage(msg: String) {
+    suspend fun sendMessage(msg: String) {
         if (userId !is String) return
 
         if (!chatAvailability) {
@@ -151,8 +158,12 @@ class ChatViewModel : ViewModel() {
                 "/chats/$chatId/messages/$key" to newMessage,
                 "/chats/$chatId/latestMsg" to newMessage
             )
+
             Log.d(TAG, "Send message: $msg at ${newMessage.sendAt}")
             databaseRef.updateChildren(childUpdate)
+            if (key != null) {
+                saveAchievedMessage(key, newMessage)
+            }
         }
     }
 
@@ -198,6 +209,16 @@ class ChatViewModel : ViewModel() {
 
             })
     }
+
+    private suspend fun saveAchievedMessage(msgKey: String, msg: MessageModel) {
+        val achievedMessage = AchievedMessage(msgKey, chatId, msg)
+        achievedMsgRepo.insertMessages(achievedMessage)
+    }
+
+    fun deleteServerMessage() {
+        databaseRef.child("chats").child(chatId).child("messages").removeValue()
+    }
+
 
     companion object {
         //TODO(REMOVE :ss of TIME_PATTERN)

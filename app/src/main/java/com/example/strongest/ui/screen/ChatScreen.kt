@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,9 +52,11 @@ import com.example.strongest.component.AppBarActions
 import com.example.strongest.component.TopAppBar
 import com.example.strongest.component.chat.ChatZone
 import com.example.strongest.component.chat.MessageBox
+import com.example.strongest.data.provider.DataViewModelProvider
 import com.example.strongest.model.MessageModel
 import com.example.strongest.ui.theme.Shapes
 import com.example.strongest.viewmodel.ChatViewModel
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -61,10 +64,11 @@ import java.util.Date
 
 @Composable
 fun ChatScreen(friendId: String, onGoBack: () -> Unit, modifier: Modifier = Modifier) {
-    val chatViewModel: ChatViewModel = viewModel()
+    val chatViewModel: ChatViewModel = viewModel(factory = DataViewModelProvider.Factory)
     val friendInfo = chatViewModel.friendInfo
     val messageUIState = chatViewModel.messagesFlow.reversed()
     val state = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     val hideKeyboard by remember {
         derivedStateOf{ state.firstVisibleItemIndex > 0}
     }
@@ -127,7 +131,7 @@ fun ChatScreen(friendId: String, onGoBack: () -> Unit, modifier: Modifier = Modi
             ChatZone(
                 modifier = Modifier.constrainAs(typingZone) {
                     bottom.linkTo(parent.bottom)
-                }, onSendMsg = chatViewModel::sendMessage
+                }, onSendMsg = { msg -> coroutineScope.launch { chatViewModel.sendMessage(msg) }}
             )
         }
     }

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".DataApplication"
@@ -17,9 +17,8 @@
         tools:targetApi="31">
         <activity
             android:name=".activity.FacebookActivity"
-            android:exported="false"
-            android:configChanges=
-                "keyboard|keyboardHidden|screenLayout|screenSize|orientation" />
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:exported="false" />
         <activity
             android:name=".activity.AuthUiActivity"
             android:exported="false" />
@@ -42,9 +41,6 @@
         <meta-data
             android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token" />
-        <meta-data android:name="com.facebook.sdk.AdvertiserIDCollectionEnabled"
-            android:value="false"/>
-
     </application>
 
 </manifest>

@@ -32,9 +32,15 @@ class FacebookActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "ON CREATE")
-        FacebookSdk.sdkInitialize(applicationContext)
-        AppEventsLogger.activateApp(this.application)
+
+        initFacebookSdk()
+        buttonFacebookLogin.performClick()
+    }
+
+
+    private fun initFacebookSdk() {
+        FacebookSdk.sdkInitialize(this.applicationContext)
+        AppEventsLogger.activateApp(application)
 
         FacebookSdk.setIsDebugEnabled(true);
         FacebookSdk.addLoggingBehavior(LoggingBehavior.APP_EVENTS);
@@ -42,9 +48,10 @@ class FacebookActivity : Activity() {
         val token = AccessToken.getCurrentAccessToken()
         val credential = token?.token?.let { FacebookAuthProvider.getCredential(it) }
         Log.d(TAG, "Token:$token _ $credential")
+
         auth = Firebase.auth
         callbackManager = CallbackManager.Factory.create()
-        buttonFacebookLogin = LoginButton(this)
+        buttonFacebookLogin = LoginButton(this.applicationContext)
 
         buttonFacebookLogin.setReadPermissions("email", "public_profile")
         buttonFacebookLogin.registerCallback(
@@ -64,24 +71,8 @@ class FacebookActivity : Activity() {
                 }
             },
         )
-        val logger = AppEventsLogger.newLogger(this)
-        logger.logEvent(AppEventsConstants.EVENT_NAME_ACTIVATED_APP)
     }
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "ON START")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        Log.d(TAG, "ON STOP")
-    }
-
-    override fun onRestart() {
-        super.onRestart()
-        Log.d(TAG, "on restart")
-    }
 
     private fun handleFacebookAccessToken(token: AccessToken) {
         Log.d(TAG, "handleFacebookAccessToken:$token")

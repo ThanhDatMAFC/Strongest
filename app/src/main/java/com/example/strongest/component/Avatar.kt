@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absolutePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Badge
@@ -61,6 +62,9 @@ fun Avatar(photoUrl: String, size: AvatarSize, modifier: Modifier = Modifier) {
                 BorderStroke(borderWidth.dp, rainbowColorsBrush),
                 CircleShape)
             )
-        Badge(containerColor = Color.Green, modifier = Modifier.absolutePadding(right = 6.dp).size(8.dp))
+        Badge(
+            containerColor = Color.Green,
+            modifier = Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(8.dp)
+        )
     }
 }

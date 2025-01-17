@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.strongest.data.AppContainer
 import com.example.strongest.data.repo.UserPreferenceRepo
 
 private const val USER_DATA = "user_data"
@@ -12,10 +13,12 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 class DataApplication: Application() {
     lateinit var userPreferenceRepo: UserPreferenceRepo
+    lateinit var dataAppContainer: AppContainer
 
     override fun onCreate() {
         super.onCreate()
 
         userPreferenceRepo = UserPreferenceRepo(dataStore)
+        dataAppContainer = AppContainer(this)
     }
 }

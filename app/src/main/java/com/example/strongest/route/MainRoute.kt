@@ -1,6 +1,5 @@
 package com.example.strongest.route
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
