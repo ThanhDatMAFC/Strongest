@@ -1,37 +1,28 @@
 package com.example.strongest.viewmodel
 
 import android.util.Log
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.core.graphics.rotationMatrix
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.strongest.data.repo.AchievedMessageRepository
 import com.example.strongest.model.AchievedMessage
 import com.example.strongest.model.MessageModel
 import com.example.strongest.model.UserModel
-import com.example.strongest.viewmodel.AuthViewModel.Companion
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.database
 import com.google.firebase.database.getValue
-import com.google.firebase.database.snapshots
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.toList
@@ -40,10 +31,11 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Date
 
 const val DB_PATH = "https://strongest-442fa-default-rtdb.asia-southeast1.firebasedatabase.app/"
+
+data class AchievedMsgState(val itemList: List<AchievedMessage> = listOf())
 
 class ChatViewModel(private val achievedMsgRepo: AchievedMessageRepository) : ViewModel() {
     private val databaseRef = FirebaseDatabase.getInstance(DB_PATH).reference
@@ -55,6 +47,22 @@ class ChatViewModel(private val achievedMsgRepo: AchievedMessageRepository) : Vi
     var messagesFlow: SnapshotStateList<List<MessageModel>> = mutableStateListOf(mutableListOf())
     private val msgKeys = mutableListOf<String>()
     private var chatAvailability: Boolean = false
+    val achievedMsgState: StateFlow<AchievedMsgState> = achievedMsgRepo.getAllMessagesStream()
+       .map { AchievedMsgState(it) }
+       .stateIn(
+           scope = viewModelScope,
+           started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+           initialValue = AchievedMsgState()
+       )
+
+    private suspend fun handleAchievedMessage() {
+        //* Filter by chat Id and convert message to messageFlow
+        val messageInChat = achievedMsgRepo.getAllMessagesStream().toList().first()
+        messageInChat
+            .filter { it.chatId == chatId }
+            .forEach { divideMsgSection(it.message) }
+        listenMsgChange()
+    }
 
     private fun enterRoomChat(chatIds: List<String>) {
         val chatIdTemplate = userId + "_" + friendInfo?.id
@@ -64,8 +72,16 @@ class ChatViewModel(private val achievedMsgRepo: AchievedMessageRepository) : Vi
             chatId = room
             //* Get all chat history in local database
             databaseRef.child("chats").child(room).child("latestMsg").get()
-                .addOnSuccessListener {
-                    if (it.hasChildren()) listenMsgChange()
+                .addOnSuccessListener { snapshot ->
+                    if (snapshot.getValue<MessageModel>()?.sender is String) {
+                        viewModelScope.launch {
+                            val messageInChat = achievedMsgRepo.getAllMessagesStream().toList().first()
+                            messageInChat
+                                .filter { it.chatId == chatId }
+                                .forEach { divideMsgSection(it.message) }
+                            listenMsgChange()
+                        }
+                    }
                 }
         } else  {
             //* Create new room chat
@@ -181,19 +197,8 @@ class ChatViewModel(private val achievedMsgRepo: AchievedMessageRepository) : Vi
                         val msg = message?.get("msg").toString()
                         val readStatus = message?.get("readStatus") as Boolean
                         val sendAt = message?.get("sendAt").toString()
-
-                        if (messagesFlow.isEmpty() || compareDateForNewSection(sendAt, messagesFlow.last().lastOrNull()?.sendAt)) {
-                            // Break into a new section when same day and within 10 min
-                            val newSection = listOf(MessageModel(sender, msg, readStatus, sendAt))
-                            messagesFlow.add(newSection)
-                        } else {
-                            // Add item to the last section
-                            val lastSection = messagesFlow.last().toMutableList()
-                            lastSection.add(MessageModel(sender, msg, readStatus, sendAt))
-                            messagesFlow.removeAt(messagesFlow.count() - 1)
-                            messagesFlow.add(lastSection)
-                        }
-
+                        val msgModel = MessageModel(sender, msg, readStatus, sendAt)
+                        divideMsgSection(msgModel)
                     }
                 }
 
@@ -210,13 +215,28 @@ class ChatViewModel(private val achievedMsgRepo: AchievedMessageRepository) : Vi
             })
     }
 
+    private fun divideMsgSection(msg: MessageModel) {
+        if (messagesFlow.isEmpty() || compareDateForNewSection(msg.sendAt, messagesFlow.last().lastOrNull()?.sendAt)) {
+            // Break into a new section when same day and within 10 min
+            val newSection = listOf(msg)
+            messagesFlow.add(newSection)
+        } else {
+            // Add item to the last section
+            val lastSection = messagesFlow.last().toMutableList()
+            lastSection.add(msg)
+            messagesFlow.removeAt(messagesFlow.count() - 1)
+            messagesFlow.add(lastSection)
+        }
+    }
+
     private suspend fun saveAchievedMessage(msgKey: String, msg: MessageModel) {
         val achievedMessage = AchievedMessage(msgKey, chatId, msg)
         achievedMsgRepo.insertMessages(achievedMessage)
     }
 
     fun deleteServerMessage() {
-        databaseRef.child("chats").child(chatId).child("messages").removeValue()
+        if (msgKeys.isNotEmpty())
+            databaseRef.child("chats").child(chatId).child("messages").removeValue()
     }
 
 

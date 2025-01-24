@@ -43,14 +43,11 @@ fun Avatar(photoUrl: String, size: AvatarSize, modifier: Modifier = Modifier) {
             )
         )
     }
-    val borderWidth = when(size) {
-        AvatarSize.SMALL -> 0
-        AvatarSize.MED -> 0
-        else -> 4
-    }
+    val borderWidth = if (size == AvatarSize.LARGE) 4 else 0
+
     Box(modifier = modifier, contentAlignment = Alignment.BottomEnd) {
         AsyncImage(model = ImageRequest.Builder(LocalContext.current)
-            .data("https://developer.android.com/static/develop/ui/compose/images/graphics-sourceimagesmall.jpg")
+            .data(photoUrl)
             .crossfade(true)
             .build(),
             contentDescription = "avatar",
@@ -64,7 +61,7 @@ fun Avatar(photoUrl: String, size: AvatarSize, modifier: Modifier = Modifier) {
             )
         Badge(
             containerColor = Color.Green,
-            modifier = Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(8.dp)
+            modifier = Modifier.align(Alignment.BottomEnd).offset(0.dp, 0.dp).size(10.dp)
         )
     }
 }
